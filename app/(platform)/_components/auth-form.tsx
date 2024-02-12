@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { BsGithub, BsGoogle } from "react-icons/bs";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,10 +16,14 @@ import { Variant } from "@/typings/auth-typings";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FormSchema } from "@/schemas/schema";
 import { AuthSocialButton } from "./auth-social-button";
+import { sendLoginInfo, sendRegistrationInfo } from "@/lib/axios-client";
+import { useSession } from "next-auth/react";
 export const AuthForm = () => {
+  const session = useSession();
+  const router = useRouter();
   const [variant, setVariant] = useState<Variant>("LOGIN");
   const [isLoading, setIsLoading] = useState(false);
   const toggleVariant = useCallback(() => {
@@ -28,6 +33,12 @@ export const AuthForm = () => {
       setVariant("LOGIN");
     }
   }, [variant]);
+  useEffect(() => {
+    if (session.status === "authenticated") {
+      console.log("authenticated");
+      router.push("/users");
+    }
+  }, [session, router]);
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -36,14 +47,17 @@ export const AuthForm = () => {
       password: "",
     },
   });
-  const onSubmit = (values: z.infer<typeof FormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     setIsLoading(true);
-    console.log(values);
     if (variant === "REGISTER") {
       // Axios register
+      await sendRegistrationInfo(values);
+      setIsLoading(false);
     }
     if (variant === "LOGIN") {
       //next auth signin
+      await sendLoginInfo(values);
+      setIsLoading(false);
     }
   };
 
@@ -95,7 +109,7 @@ export const AuthForm = () => {
                 </FormItem>
               )}
             />
-            <Button className="w-full" type="submit">
+            <Button disabled={isLoading} className="w-full" type="submit">
               {variant === "LOGIN" ? "sign in" : "sign up"}
             </Button>
           </form>

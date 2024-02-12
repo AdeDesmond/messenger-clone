@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import localfont from "next/font/local";
-
+import { auth } from "@/auth";
+import { AuthProvider } from "@/context/auth-context";
 const mainFont = localfont({
   src: "../public/font/noto.ttf",
 });
@@ -17,8 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={mainFont.className}>{children}</body>
-    </html>
+    <AuthProvider>
+      <html lang="en">
+        <body className={mainFont.className}>{children}</body>
+      </html>
+    </AuthProvider>
   );
 }
