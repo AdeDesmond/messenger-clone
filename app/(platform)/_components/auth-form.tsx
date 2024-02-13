@@ -57,6 +57,7 @@ export const AuthForm = () => {
     if (variant === "LOGIN") {
       //next auth signin
       await sendLoginInfo(values);
+      router.push("/users");
       setIsLoading(false);
     }
   };
