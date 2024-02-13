@@ -74,6 +74,14 @@ function ConversationBox({ data, selected }: ConversationBoxProps) {
               </p>
             )}
           </div>
+          <p
+            className={cn(
+              "text-sm truncate",
+              hasSeen ? "text-gray-500" : "text-black font-medium"
+            )}
+          >
+            {lastMessageText}
+          </p>
         </div>
       </div>
     </div>

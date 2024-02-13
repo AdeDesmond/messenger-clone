@@ -5,3 +5,7 @@ export const FormSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+
+export const MessageSchema = z.object({
+  message: z.string(),
+});
