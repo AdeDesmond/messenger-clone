@@ -5,16 +5,59 @@ import { cn } from "@/lib/utils";
 import { FullConversationType } from "@/types";
 import { MdOutlineGroupAdd } from "react-icons/md";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ConversationBox from "./conversation-box";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { pusherClient } from "@/lib/pusher";
+import { find } from "lodash";
 
 interface ConversationListProps {
-  initialItems: FullConversationType[] | null;
+  initialItems: FullConversationType[] | undefined;
 }
 function ConversationList({ initialItems }: ConversationListProps) {
   const [items, setItems] = useState(initialItems);
+  const session = useCurrentUser();
   const router = useRouter();
   const { conversationId, isOpen } = useConversation();
+  const pusherKey = useMemo(() => {
+    return session?.email;
+  }, [session?.email]);
+
+  useEffect(() => {
+    if (!pusherKey) {
+      return;
+    }
+    const newHandler = (conversation: FullConversationType) => {
+      setItems((current) => {
+        if (find(current, { id: conversation.id })) {
+          return current;
+        }
+
+        return [conversation, ...current];
+      });
+    };
+    const updateHandler = (conversation: FullConversationType) => {
+      setItems((current) =>
+        current?.map((currentConversation) => {
+          if (currentConversation.id === conversation.id) {
+            return {
+              ...currentConversation,
+              messages: conversation.messages,
+            };
+          }
+          return currentConversation;
+        })
+      );
+    };
+    pusherClient.subscribe(pusherKey);
+    pusherClient.bind("conversation:new", newHandler);
+    pusherClient.bind("conversation:update", updateHandler);
+    return () => {
+      pusherClient.unsubscribe(pusherKey);
+      pusherClient.unbind("conversation:new", newHandler);
+      pusherClient.unbind("conversation:update", updateHandler);
+    };
+  }, [pusherKey]);
   return (
     <aside
       className={cn(
